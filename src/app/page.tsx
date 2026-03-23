@@ -21,7 +21,7 @@ import BackgroundMesh from "@/components/BackgroundMesh";
 
 // Variants for subtle, premium animations
 const fadeUp: Variants = {
-  hidden: { opacity: 0, y: 15 },
+  hidden: { opacity: 0, y: 20 },
   visible: { 
     opacity: 1, 
     y: 0, 
@@ -37,12 +37,14 @@ const staggerContainer: Variants = {
   }
 };
 
+// Gamified physics-based spring animation for the cards
 const cardVariant: Variants = {
-  hidden: { opacity: 0, y: 15 },
+  hidden: { opacity: 0, y: 30, scale: 0.95 },
   visible: { 
     opacity: 1, 
     y: 0, 
-    transition: { type: "spring", stiffness: 100, damping: 20 } 
+    scale: 1,
+    transition: { type: "spring", stiffness: 100, damping: 15 } 
   }
 };
 
@@ -83,7 +85,7 @@ export default function Home() {
 
   return (
     <>
-      {/* BanterBox Custom Preloader - Now Light & Playful */}
+      {/* BanterBox Custom Preloader - Light & Playful */}
       <AnimatePresence>
         {isPreloading && (
           <motion.div
@@ -125,7 +127,7 @@ export default function Home() {
       </AnimatePresence>
 
       {/* Main Page Content - Light Theme */}
-      <main className="relative min-h-screen w-full flex flex-col items-center pb-24 font-sans tracking-tight">
+      <main className="relative min-h-screen w-full flex flex-col items-center pb-24 font-sans tracking-tight overflow-x-hidden">
         <BackgroundMesh />
 
         {/* Sleek Branding Navbar - Crisp White */}
@@ -255,20 +257,17 @@ export default function Home() {
           </div>
         </section>
 
-        {/* The Stats Section - Clean, Light Data Blocks */}
-        
-
-        {/* The Games Showcase - Bright Cards */}
-        <section className="relative z-10 w-full max-w-5xl mx-auto px-4 py-10">
+        {/* The Games Showcase - Sleek, Gamified Cartridge Cards */}
+        <section className="relative z-10 w-full max-w-5xl mx-auto px-4 py-20">
           <motion.div 
             initial="hidden" 
             whileInView="visible" 
             viewport={{ once: true, margin: "-10%" }} 
             variants={fadeUp} 
-            className="text-center mb-12"
+            className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-4xl font-extrabold mb-4 text-zinc-900">Curated for Connection.</h2>
-            <p className="text-zinc-500 text-base md:text-lg font-medium">Real-time multiplayer mini-games built specifically for two.</p>
+            <h2 className="text-4xl md:text-5xl font-extrabold mb-4 text-zinc-900 tracking-tight">Curated for Connection.</h2>
+            <p className="text-zinc-500 text-lg font-bold uppercase tracking-wider">Real-time multiplayer mini-games built for two.</p>
           </motion.div>
 
           <motion.div 
@@ -276,28 +275,41 @@ export default function Home() {
             whileInView="visible" 
             viewport={{ once: true, margin: "-10%" }} 
             variants={staggerContainer}
-            className="grid grid-cols-1 md:grid-cols-2 gap-6"
+            className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8"
           >
             {[
-              { icon: <Zap />, color: "text-orange-600", bg: "bg-orange-100", title: "Guess the Number", desc: "Secretly lock in a number. Match, and someone owes dinner." },
-              { icon: <Cat />, color: "text-emerald-600", bg: "bg-emerald-100", title: "Guess the Animal", desc: "20 questions, animal edition. Narrow it down together." },
-              { icon: <Shuffle />, color: "text-blue-600", bg: "bg-blue-100", title: "Word Chain", desc: "Don't break the chain. Gets weird fast." },
-              { icon: <Search />, color: "text-purple-600", bg: "bg-purple-100", title: "Unscramble", desc: "Race to decode hidden words. Brains vs. Brains." },
-              { icon: <MessageCircle />, color: "text-pink-600", bg: "bg-pink-100", title: "Trivia Match", desc: "Test your knowledge on hundreds of topics." },
-              { icon: <Gift />, color: "text-yellow-600", bg: "bg-yellow-100", title: "Daily Rewards", desc: "Log in together to unlock special perks and avatars." }
+              { icon: <Zap strokeWidth={2.5} className="w-6 h-6" />, color: "text-orange-500", bg: "bg-orange-100", title: "Guess the Number", desc: "Secretly lock in a number. Match, and someone owes dinner." },
+              { icon: <Cat strokeWidth={2.5} className="w-6 h-6" />, color: "text-emerald-500", bg: "bg-emerald-100", title: "Guess the Animal", desc: "20 questions, animal edition. Narrow it down together." },
+              { icon: <Shuffle strokeWidth={2.5} className="w-6 h-6" />, color: "text-blue-500", bg: "bg-blue-100", title: "Word Chain", desc: "Don't break the chain. Gets weird fast." },
+              { icon: <Search strokeWidth={2.5} className="w-6 h-6" />, color: "text-purple-500", bg: "bg-purple-100", title: "Unscramble", desc: "Race to decode hidden words. Brains vs. Brains." },
+              { icon: <MessageCircle strokeWidth={2.5} className="w-6 h-6" />, color: "text-pink-500", bg: "bg-pink-100", title: "Trivia Match", desc: "Test your knowledge on hundreds of topics." },
+              { icon: <Gift strokeWidth={2.5} className="w-6 h-6" />, color: "text-yellow-500", bg: "bg-yellow-100", title: "Daily Rewards", desc: "Log in together to unlock special perks and avatars." }
             ].map((game, i) => (
               <motion.div 
                 key={i} 
                 variants={cardVariant} 
-                className="flex items-start gap-5 p-6 rounded-2xl bg-white border-2 border-zinc-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
+                whileHover={{ 
+                  y: -6, 
+                  x: -6,
+                  transition: { type: "spring", stiffness: 400, damping: 25 } 
+                }}
+                className="group relative flex items-start gap-5 p-6 rounded-xl bg-white border-4 border-zinc-900 shadow-[4px_4px_0px_0px_rgba(24,24,27,1)] hover:shadow-[10px_10px_0px_0px_rgba(24,24,27,1)] transition-shadow duration-300 cursor-pointer overflow-hidden z-10"
               >
-                <div className={`w-14 h-14 rounded-2xl ${game.bg} ${game.color} flex items-center justify-center shrink-0`}>
+                {/* Subtle color flare on hover */}
+                <div className={`absolute inset-0 opacity-0 group-hover:opacity-[0.03] transition-opacity duration-300 ${game.bg} -z-10`} />
+
+                {/* Gamified Button Icon */}
+                <div className={`w-14 h-14 rounded-xl ${game.bg} border-[3px] border-zinc-900 flex items-center justify-center shrink-0 shadow-[2px_2px_0px_0px_rgba(24,24,27,1)] ${game.color} group-hover:scale-110 transition-transform duration-300`}>
                     {game.icon}
                 </div>
-                <div className="flex flex-col">
-                    <h3 className="text-xl font-bold text-zinc-900 mb-2">{game.title}</h3>
-                    <p className="text-zinc-500 text-sm font-medium leading-relaxed">{game.desc}</p>
+                
+                <div className="flex flex-col mt-1">
+                    <h3 className="text-xl font-extrabold text-zinc-900 mb-1.5 tracking-tight">{game.title}</h3>
+                    <p className="text-zinc-500 text-sm font-semibold leading-relaxed group-hover:text-zinc-700 transition-colors">{game.desc}</p>
                 </div>
+
+                {/* Small 'status' dot to make it feel like hardware */}
+                <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-zinc-200 group-hover:bg-emerald-400 transition-colors duration-300 border border-zinc-900" />
               </motion.div>
             ))}
           </motion.div>
