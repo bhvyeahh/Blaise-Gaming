@@ -11,6 +11,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
+    // 1. SAVE THE EMAIL TO YOUR RESEND CONTACTS (Backend Save)
+    try {
+      await resend.contacts.create({
+        email: email,
+        unsubscribed: false,
+      });
+    } catch (contactError) {
+      // We wrap this in a try-catch so if they sign up twice, 
+      // the API doesn't crash the whole process.
+      console.log("Contact might already exist or error saving:", contactError);
+    }
+
+    // 2. SEND THE PREMIUM WELCOME EMAIL
     await resend.emails.send({
       from: "BanterBox <hello@layoutory.in>", 
       to: email,
@@ -42,7 +55,7 @@ export async function POST(req: Request) {
                       
                       <p style="margin: 0 0 16px; font-size: 16px; color: #52525b; line-height: 1.6;">Hey there,</p>
                       
-                      <p style="margin: 0 0 16px; font-size: 16px; color: #52525b; line-height: 1.6;">You are officially on the waitlist. We are dropping the ultimate trending couples game web app in just a few days.</p>
+                      <p style="margin: 0 0 16px; font-size: 16px; color: #52525b; line-height: 1.6;">You are officially on the waitlist. We are dropping the ultimate trending couples games webapp in just a few days.</p>
                       
                       <p style="margin: 0 0 32px; font-size: 16px; color: #52525b; line-height: 1.6;">Keep an eye on your inbox. We'll send you an exclusive early-access link the second we go live.</p>
                       
