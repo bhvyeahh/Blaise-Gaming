@@ -11,10 +11,15 @@ import {
   Cat, 
   Shuffle, 
   Sparkles,
-  Infinity
+  Infinity,
+  Search,
+  Zap,
+  Tag,
+  Gift
 } from "lucide-react";
 import BackgroundMesh from "@/components/BackgroundMesh";
 
+// Variants for subtle, premium animations
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 15 },
   visible: { 
@@ -44,12 +49,10 @@ const cardVariant: Variants = {
 export default function Home() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  
-  // Failsafe Preloader State
   const [isPreloading, setIsPreloading] = useState(true);
 
+  // Simplified Preloader Logic
   useEffect(() => {
-    // Failsafe timer: forces the preloader off the screen after 2.5s no matter what
     const timer = setTimeout(() => {
       setIsPreloading(false);
     }, 2500);
@@ -80,7 +83,7 @@ export default function Home() {
 
   return (
     <>
-      {/* BanterBox Custom Preloader */}
+      {/* BanterBox Custom Preloader - Now Light & Playful */}
       <AnimatePresence>
         {isPreloading && (
           <motion.div
@@ -88,11 +91,11 @@ export default function Home() {
             initial={{ opacity: 1 }}
             exit={{ opacity: 0, pointerEvents: "none" }}
             transition={{ duration: 0.5 }}
-            className="fixed inset-0 z-[999] flex items-center justify-center bg-[#0a0a0a]"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-white"
           >
-            <div className="flex items-center text-3xl md:text-4xl font-semibold text-white tracking-tight">
+            <div className="flex items-center text-3xl md:text-5xl font-extrabold text-zinc-900 tracking-tight">
               <span>Banter</span>
-              <div className="relative flex items-center justify-center ml-1 w-[55px] h-[35px]">
+              <div className="relative flex items-center justify-center ml-1 w-[55px] h-[45px] md:h-[55px]">
                 <motion.span
                   animate={{ opacity: [1, 1, 0, 0] }}
                   transition={{ duration: 2.2, times: [0, 0.2, 0.4, 1] }}
@@ -101,11 +104,11 @@ export default function Home() {
                   Box
                 </motion.span>
                 <motion.div
-                  initial={{ opacity: 0, width: "55px", height: "35px", borderRadius: "8px" }}
+                  initial={{ opacity: 0, width: "55px", height: "45px", borderRadius: "12px" }}
                   animate={{
                     opacity: [0, 0, 1, 1, 1, 0],
-                    width: ["55px", "55px", "35px", "35px", "35px", "35px"],
-                    borderRadius: ["8px", "8px", "8px", "50%", "50%", "50%"],
+                    width: ["55px", "55px", "45px", "45px", "45px", "45px"],
+                    borderRadius: ["12px", "12px", "12px", "50%", "50%", "50%"],
                     scale: [1, 1, 1, 1, 1.2, 0]
                   }}
                   transition={{ 
@@ -113,7 +116,7 @@ export default function Home() {
                     times: [0, 0.3, 0.5, 0.7, 0.85, 1], 
                     ease: "easeInOut" 
                   }}
-                  className="absolute bg-white"
+                  className="absolute bg-orange-500"
                 />
               </div>
             </div>
@@ -121,186 +124,227 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* Main Page Content - CRITICAL: Removed overflow-hidden so mobile triggers work */}
+      {/* Main Page Content - Light Theme */}
       <main className="relative min-h-screen w-full flex flex-col items-center pb-24 font-sans tracking-tight">
         <BackgroundMesh />
 
-        {/* Sleek Branding Navbar */}
-        <header className="fixed top-0 inset-x-0 z-50 h-16 flex items-center justify-between px-6 bg-[#0a0a0a]/50 backdrop-blur-md border-b border-white/5">
-          <div className="flex items-center gap-1.5 font-semibold text-white tracking-tight text-lg">
-            Banter<div className="w-3 h-3 bg-white rounded-sm" />
+        {/* Sleek Branding Navbar - Crisp White */}
+        <header className="fixed top-0 inset-x-0 z-50 h-20 flex items-center justify-between px-6 bg-white/80 backdrop-blur-md border-b border-zinc-200">
+          <div className="flex items-center gap-1.5 font-extrabold text-zinc-900 tracking-tight text-xl">
+            Banter<div className="w-3 h-3 bg-blue-600 rounded-sm" />
           </div>
-          <button 
-            onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
-            className="text-xs font-medium text-zinc-400 hover:text-white transition-colors"
-          >
-            Pricing
-          </button>
+          <div className="flex items-center gap-4 md:gap-6">
+             <button 
+                onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
+                className="text-sm font-bold text-white px-6 py-2.5 rounded-full bg-zinc-900 hover:bg-zinc-800 transition-colors shadow-md"
+              >
+                Pricing
+              </button>
+          </div>
         </header>
 
         {/* Hero Section */}
-        <section className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 w-full max-w-3xl mx-auto text-center pt-16">
-          <motion.div 
-            initial="hidden" 
-            animate={!isPreloading ? "visible" : "hidden"} 
-            variants={fadeUp} 
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-zinc-400 text-xs font-medium mb-8 backdrop-blur-md"
-          >
-            <Sparkles className="w-3 h-3 text-purple-400" />
-            <span>The viral couple games, digitized.</span>
-          </motion.div>
+        <section className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 w-full max-w-7xl mx-auto text-left pt-24 md:pt-16">
+          <div className="flex flex-col md:flex-row items-center justify-between w-full gap-12">
+            
+            {/* Left Content */}
+            <div className="w-full md:w-1/2">
+              <motion.div 
+                initial="hidden" 
+                animate={!isPreloading ? "visible" : "hidden"} 
+                variants={fadeUp} 
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-100 border border-orange-200 text-orange-600 text-xs md:text-sm font-bold mb-6"
+              >
+                <Gamepad2 className="w-4 h-4" />
+                <span>The viral couple games, digitized.</span>
+              </motion.div>
 
-          <motion.h1 
-            initial="hidden" 
-            animate={!isPreloading ? "visible" : "hidden"} 
-            variants={fadeUp} 
-            className="text-4xl md:text-6xl font-semibold text-white mb-5 leading-tight"
-          >
-            Stop texting. <br className="hidden md:block" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-200 to-zinc-500">
-              Start playing.
-            </span>
-          </motion.h1>
+              <motion.h1 
+                initial="hidden" 
+                animate={!isPreloading ? "visible" : "hidden"} 
+                variants={fadeUp} 
+                className="text-5xl md:text-7xl font-extrabold text-zinc-900 mb-6 leading-[1.1]"
+              >
+                YO! LET'S<br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500">
+                  START THE GAME <br className="hidden md:block" /> TOGETHER.
+                </span>
+              </motion.h1>
 
-          <motion.p 
-            initial="hidden" 
-            animate={!isPreloading ? "visible" : "hidden"}  
-            variants={fadeUp} 
-            className="text-base md:text-lg text-zinc-400 mb-10 max-w-xl font-medium"
-          >
-            The ultimate online playground for couples. Hop on a call, share a room code, and play the games that actually cure long-distance boredom.
-          </motion.p>
+              <motion.div 
+                initial="hidden" 
+                animate={!isPreloading ? "visible" : "hidden"}  
+                variants={fadeUp} 
+                className="flex items-center gap-4 mb-10 bg-white px-4 py-2 rounded-full border border-zinc-200 shadow-sm inline-flex"
+              >
+                  <div className="flex items-center -space-x-3">
+                    {[Zap, Cat, Shuffle].map((Icon, i) => (
+                      <div key={i} className={`w-10 h-10 rounded-full flex items-center justify-center text-white border-2 border-white shadow-sm ${i === 0 ? 'bg-blue-500' : i === 1 ? 'bg-emerald-500' : 'bg-purple-500'}`}>
+                        <Icon strokeWidth={2} className="w-5 h-5" />
+                      </div>
+                    ))}
+                  </div>
+                <p className="text-sm text-zinc-600 font-bold">Early Access</p>
+              </motion.div>
 
-          <motion.form 
-            initial="hidden" 
-            animate={!isPreloading ? "visible" : "hidden"}  
-            variants={fadeUp} 
-            onSubmit={handleSubmit} 
-            className="w-full max-w-md relative flex items-center p-1 rounded-full bg-zinc-900/60 border border-white/10 backdrop-blur-2xl shadow-2xl shadow-black/50"
-          >
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={status === "success" || status === "loading"}
-              placeholder="Partner's or your email..."
-              className="w-full px-5 py-3 bg-transparent text-white placeholder-zinc-500 focus:outline-none text-sm transition-all disabled:opacity-50"
-            />
-            <button
-              type="submit"
-              disabled={status === "success" || status === "loading"}
-              className="absolute right-1 px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors disabled:opacity-50 flex items-center gap-2"
-            >
-              {status === "loading" ? <Loader2 className="w-4 h-4 animate-spin" /> : status === "success" ? "Secured" : "Get Access"}
-            </button>
-          </motion.form>
-          {status === "success" && (
-            <motion.p 
-              initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
-              className="mt-5 text-xs font-medium text-emerald-400 flex items-center justify-center gap-1.5"
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" /> You're on the VIP list. Check your inbox.
-            </motion.p>
-          )}
+              {/* High-Contrast Joinlist Form */}
+              <motion.form 
+                initial="hidden" 
+                animate={!isPreloading ? "visible" : "hidden"}  
+                variants={fadeUp} 
+                onSubmit={handleSubmit} 
+                className="w-full max-w-lg relative flex items-center p-2 rounded-full bg-white border-2 border-zinc-200 shadow-xl mb-10"
+              >
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={status === "success" || status === "loading"}
+                  placeholder="Partner's or your email..."
+                  className="w-full px-6 py-4 bg-transparent text-zinc-900 font-medium placeholder-zinc-400 focus:outline-none text-base transition-all disabled:opacity-50"
+                />
+                <button
+                  type="submit"
+                  disabled={status === "success" || status === "loading"}
+                  className="absolute right-2 px-8 py-4 rounded-full bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2 shadow-md"
+                >
+                  {status === "loading" ? <Loader2 className="w-4 h-4 animate-spin" /> : status === "success" ? "Secured" : "Are You Ready?"}
+                </button>
+              </motion.form>
+              {status === "success" && (
+                <motion.p 
+                  initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
+                  className="mt-4 text-sm font-bold text-emerald-600 flex items-center gap-1.5"
+                >
+                  <CheckCircle2 className="w-4 h-4" /> You're on the VIP list. Check your inbox.
+                </motion.p>
+              )}
+            </div>
+            
+            {/* Hero Graphic - Vibrant CSS Playful Controller */}
+            <div className="w-full md:w-1/2 flex items-center justify-center relative mt-10 md:mt-0">
+                 <div className="absolute inset-0 bg-blue-100 rounded-[3rem] rotate-3 scale-105" />
+                 <div className="relative w-full h-[350px] md:h-[450px] bg-white border-4 border-zinc-900 rounded-[2.5rem] shadow-[8px_8px_0px_0px_rgba(24,24,27,1)] flex items-center justify-center overflow-hidden">
+                    {/* The "Controller" */}
+                    <div className="w-[260px] h-[160px] bg-zinc-900 rounded-[4rem] relative flex items-center justify-between px-8 shadow-2xl">
+                        {/* D-Pad */}
+                        <div className="w-12 h-12 relative">
+                           <div className="absolute top-4 left-0 w-12 h-4 bg-zinc-700 rounded-sm" />
+                           <div className="absolute top-0 left-4 w-4 h-12 bg-zinc-700 rounded-sm" />
+                        </div>
+                        {/* Action Buttons */}
+                        <div className="grid grid-cols-2 gap-2 rotate-45">
+                           <div className="w-6 h-6 rounded-full bg-emerald-500 shadow-inner" />
+                           <div className="w-6 h-6 rounded-full bg-blue-500 shadow-inner" />
+                           <div className="w-6 h-6 rounded-full bg-yellow-400 shadow-inner" />
+                           <div className="w-6 h-6 rounded-full bg-red-500 shadow-inner" />
+                        </div>
+                        {/* Center lights */}
+                        <div className="absolute top-6 left-1/2 -translate-x-1/2 flex gap-2">
+                           <div className="w-2 h-1 bg-zinc-700 rounded-full" />
+                           <div className="w-2 h-1 bg-zinc-700 rounded-full" />
+                           <div className="w-2 h-1 bg-zinc-700 rounded-full" />
+                        </div>
+                    </div>
+                    {/* Decorative elements inside the card */}
+                    <Sparkles className="absolute top-8 right-8 text-orange-400 w-8 h-8" />
+                    <div className="absolute bottom-8 left-8 w-16 h-16 bg-blue-50 rounded-full -z-10" />
+                 </div>
+            </div>
+          </div>
         </section>
 
-        {/* The Games Showcase */}
-        {/* CRITICAL: viewport={{ once: true, amount: 0.1 }} guarantees it fires on mobile */}
-        <section className="relative z-10 w-full max-w-4xl mx-auto px-4 py-20">
+        {/* The Stats Section - Clean, Light Data Blocks */}
+        
+
+        {/* The Games Showcase - Bright Cards */}
+        <section className="relative z-10 w-full max-w-5xl mx-auto px-4 py-10">
           <motion.div 
             initial="hidden" 
             whileInView="visible" 
-            viewport={{ once: true, amount: 0.1 }} 
+            viewport={{ once: true, margin: "-10%" }} 
             variants={fadeUp} 
             className="text-center mb-12"
           >
-            <h2 className="text-2xl md:text-3xl font-semibold mb-3 text-white">Curated for connection.</h2>
-            <p className="text-zinc-500 text-sm md:text-base">Real-time multiplayer mini-games built specifically for two.</p>
+            <h2 className="text-3xl md:text-4xl font-extrabold mb-4 text-zinc-900">Curated for Connection.</h2>
+            <p className="text-zinc-500 text-base md:text-lg font-medium">Real-time multiplayer mini-games built specifically for two.</p>
           </motion.div>
 
           <motion.div 
             initial="hidden" 
             whileInView="visible" 
-            viewport={{ once: true, amount: 0.1 }} 
+            viewport={{ once: true, margin: "-10%" }} 
             variants={staggerContainer}
-            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+            className="grid grid-cols-1 md:grid-cols-2 gap-6"
           >
             {[
-              { 
-                icon: <Gamepad2 strokeWidth={1.5} className="w-5 h-5 text-zinc-300" />, 
-                title: "Guess the Number", 
-                desc: "1 to 100? Or 1 to 1,000? You both secretly lock in a number. Match, and someone owes dinner."
-              },
-              { 
-                icon: <MessageCircle strokeWidth={1.5} className="w-5 h-5 text-zinc-300" />, 
-                title: "Word Chain", 
-                desc: "Say a word. They type the first thing that comes to mind. Don't break the chain. Gets weird fast."
-              },
-              { 
-                icon: <Cat strokeWidth={1.5} className="w-5 h-5 text-zinc-300" />, 
-                title: "Guess the Animal", 
-                desc: "20 questions, animal edition. Ask yes/no questions to narrow it down before you run out of guesses."
-              },
-              { 
-                icon: <Shuffle strokeWidth={1.5} className="w-5 h-5 text-zinc-300" />, 
-                title: "Unscramble", 
-                desc: "Race against the clock to connect letters and decode hidden words. Brains vs. Brains."
-              }
+              { icon: <Zap />, color: "text-orange-600", bg: "bg-orange-100", title: "Guess the Number", desc: "Secretly lock in a number. Match, and someone owes dinner." },
+              { icon: <Cat />, color: "text-emerald-600", bg: "bg-emerald-100", title: "Guess the Animal", desc: "20 questions, animal edition. Narrow it down together." },
+              { icon: <Shuffle />, color: "text-blue-600", bg: "bg-blue-100", title: "Word Chain", desc: "Don't break the chain. Gets weird fast." },
+              { icon: <Search />, color: "text-purple-600", bg: "bg-purple-100", title: "Unscramble", desc: "Race to decode hidden words. Brains vs. Brains." },
+              { icon: <MessageCircle />, color: "text-pink-600", bg: "bg-pink-100", title: "Trivia Match", desc: "Test your knowledge on hundreds of topics." },
+              { icon: <Gift />, color: "text-yellow-600", bg: "bg-yellow-100", title: "Daily Rewards", desc: "Log in together to unlock special perks and avatars." }
             ].map((game, i) => (
               <motion.div 
                 key={i} 
                 variants={cardVariant} 
-                className="p-6 rounded-2xl bg-zinc-900/30 border border-white/5 backdrop-blur-md hover:bg-zinc-800/40 transition-colors"
+                className="flex items-start gap-5 p-6 rounded-2xl bg-white border-2 border-zinc-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
               >
-                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mb-4 border border-white/10">
-                  {game.icon}
+                <div className={`w-14 h-14 rounded-2xl ${game.bg} ${game.color} flex items-center justify-center shrink-0`}>
+                    {game.icon}
                 </div>
-                <h3 className="text-lg font-medium text-white mb-2">{game.title}</h3>
-                <p className="text-zinc-400 text-sm leading-relaxed">{game.desc}</p>
+                <div className="flex flex-col">
+                    <h3 className="text-xl font-bold text-zinc-900 mb-2">{game.title}</h3>
+                    <p className="text-zinc-500 text-sm font-medium leading-relaxed">{game.desc}</p>
+                </div>
               </motion.div>
             ))}
-            
-            <motion.div 
-              variants={cardVariant} 
-              className="md:col-span-2 p-6 rounded-2xl bg-gradient-to-r from-zinc-900/50 to-zinc-900/30 border border-white/5 backdrop-blur-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
-            >
-              <div>
-                <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center mb-4 border border-purple-500/20">
-                  <Infinity strokeWidth={1.5} className="w-5 h-5 text-purple-400" />
-                </div>
-                <h3 className="text-lg font-medium text-white mb-1">An expanding library.</h3>
-                <p className="text-zinc-400 text-sm">New games, prompts, and challenges added monthly. The fun doesn't cap at 4 games.</p>
-              </div>
-            </motion.div>
           </motion.div>
         </section>
 
-        {/* Pricing Section */}
-        <section className="relative z-10 w-full max-w-3xl mx-auto px-4 py-12">
+        {/* Pricing Section - Vibrant Game Pass Style */}
+        <section className="relative z-10 w-full max-w-4xl mx-auto px-6 py-20">
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mb-12">
+                 <h2 className="text-3xl md:text-4xl font-extrabold mb-4 text-zinc-900">Choose Your Level.</h2>
+                 <p className="text-zinc-500 text-base max-w-md mx-auto font-medium">Ditch the subscriptions. Pay once, play forever with your partner.</p>
+            </motion.div>
+          
           <motion.div 
             initial="hidden" 
             whileInView="visible" 
-            viewport={{ once: true, amount: 0.1 }} 
+            viewport={{ once: true, margin: "-10%" }} 
             variants={fadeUp} 
-            className="flex flex-col md:flex-row items-center justify-between p-8 rounded-3xl bg-zinc-900/80 border border-white/10 backdrop-blur-xl"
+            className="w-full p-8 md:p-10 rounded-[2.5rem] bg-white border-4 border-zinc-900 shadow-[8px_8px_0px_0px_rgba(24,24,27,1)] flex flex-col items-start gap-8 relative overflow-hidden"
           >
-            <div className="mb-6 md:mb-0 md:mr-8 text-center md:text-left">
-              <h2 className="text-2xl font-semibold text-white mb-2">Lifetime Pass</h2>
-              <p className="text-zinc-400 text-sm max-w-xs">Pay once. Unlock all current and future games forever for both of you.</p>
-            </div>
-            <div className="flex flex-col items-center md:items-end">
-              <div className="flex items-baseline gap-1.5 mb-4">
-                <span className="text-4xl font-bold text-white">$5</span>
-                <span className="text-zinc-500 text-xs uppercase tracking-widest font-medium">One-Time</span>
+              <div className="absolute top-0 right-0 w-64 h-64 bg-orange-100 rounded-full blur-3xl -z-10 translate-x-1/2 -translate-y-1/2" />
+              
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900 text-white text-xs font-bold uppercase tracking-wider">
+                <Tag className="w-4 h-4" />
+                <span>One-Time Offer</span>
               </div>
+              
+              <div className="flex items-center gap-5">
+                 <div className="w-20 h-20 rounded-3xl bg-blue-100 flex items-center justify-center text-blue-600 border-2 border-blue-200">
+                    <Infinity strokeWidth={2.5} size={40} />
+                 </div>
+                 <div className="flex flex-col">
+                   <h2 className="text-3xl font-extrabold text-zinc-900 mb-1">Lifetime Pass</h2>
+                   <p className="text-zinc-500 font-medium">Unlock all current and future games forever.</p>
+                 </div>
+              </div>
+
+              <div className="flex items-end gap-2 my-2">
+                <span className="text-6xl font-black text-zinc-900 leading-none">$5</span>
+                <span className="text-zinc-400 font-bold uppercase tracking-widest pb-1">One-Time</span>
+              </div>
+              
               <button 
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
-                className="px-6 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors flex items-center gap-2"
+                className="w-full px-8 py-5 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white text-lg font-extrabold transition-colors flex items-center justify-center gap-2 shadow-lg"
               >
-                Get Early Access <ArrowRight className="w-4 h-4" />
+                Secure VIP Access <ArrowRight className="w-6 h-6" />
               </button>
-            </div>
           </motion.div>
         </section>
       </main>
