@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  reactCompiler: true,
+  // Allow your Android phone to connect to the dev server
+  allowedDevOrigins: ["192.168.1.7"],
 };
 
 export default nextConfig;
