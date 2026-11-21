@@ -1,27 +1,15 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
-import SmoothScroll from "@/components/SmoothScroll";
 
-const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"] });
+const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-jakarta", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "BanterBox | The Ultimate Couples Roadtrip App",
-  description: "Play trending couple games anywhere, anytime.",
+  title: "BanterBox — Two Players. Zero Chill.",
+  description: "Ridiculously fun mini-games for you and your favorite person. Try Guess the Number, explore upcoming games and join the BanterBox early-access list.",
+  openGraph: { title: "BanterBox — Two Players. Zero Chill.", description: "Good games. Better company. Try a mini-game and join the early-access list.", type: "website" },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="en" className="dark">
-      <body className={`${jakarta.className} bg-[#0a0a0a] text-white antialiased`}>
-        <SmoothScroll>
-          {children}
-        </SmoothScroll>
-      </body>
-    </html>
-  );
+export default function RootLayout({ children }: Readonly<{children: React.ReactNode}>) {
+  return <html lang="en"><body className={jakarta.variable}>{children}</body></html>;
 }
