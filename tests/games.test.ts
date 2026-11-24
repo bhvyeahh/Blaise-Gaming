@@ -1,0 +1,17 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {newBrainGame,answerBrain,nextBrain,randomBrainGame,PROMPTS} from '../src/lib/banter/brain.ts';
+import {newPoisonGame,placeTrap,pickCupcake,availableCells} from '../src/lib/banter/poison.ts';
+const brain=()=>newBrainGame([0,1,2,3,4],[0,1,2,3,0]);
+test('Brain Sync rejects invalid setup',()=>{assert.throws(()=>newBrainGame([0,0,1,2,3],[0,0,0,0,0]));assert.throws(()=>newBrainGame([0,1,2,3,99],[0,0,0,0,0]));assert.throws(()=>newBrainGame([0,1,2,3,4],[0,0,0,0,99]));});
+test('Brain Sync random games contain five unique valid prompts',()=>{for(let i=0;i<50;i++){const g=randomBrainGame();assert.equal(new Set(g.rounds.map(r=>r.promptId)).size,5);for(const r of g.rounds)assert.ok(r.botChoice>=0&&r.botChoice<PROMPTS[r.promptId].options.length);}});
+test('Brain Sync cannot skip before answering or accept invalid choices',()=>{const g=brain();assert.equal(nextBrain(g),g);for(const x of [-1,4,1.5,'1',null,{type:'SET_SCORE'}])assert.equal(answerBrain(g,x),g);});
+test('Brain Sync locks answer and scores only once',()=>{const g=brain();const r=answerBrain(g,0);assert.equal(r.phase,'reveal');assert.equal(r.score,1);assert.equal(answerBrain(r,0),r);assert.equal(answerBrain(r,1),r);assert.equal(g.score,0);assert.equal(g.rounds[0].playerChoice,null);});
+test('Brain Sync five rounds terminate and final score is correct',()=>{let g=brain();for(const x of [0,0,2,0,0])g=nextBrain(answerBrain(g,x));assert.equal(g.phase,'finished');assert.equal(g.score,3);assert.equal(nextBrain(g),g);assert.equal(answerBrain(g,0),g);});
+test('Poison Picks rejects bad traps and cannot pick before setup',()=>{assert.throws(()=>newPoisonGame(9));const g=newPoisonGame(5);assert.equal(placeTrap(g,-1),g);assert.equal(placeTrap(g,'1'),g);assert.equal(pickCupcake(g,1,2),g);});
+test('Poison Picks locks trap and handles safe moves immutably',()=>{const g=placeTrap(newPoisonGame(5),3);assert.equal(placeTrap(g,1),g);const r=pickCupcake(g,0,1);assert.equal(r.phase,'playing');assert.deepEqual(r.playerPicks,[0]);assert.deepEqual(r.botPicks,[1]);assert.deepEqual(g.playerPicks,[]);});
+test('Poison Picks rejects duplicate and invalid picks on both boards',()=>{const g=pickCupcake(placeTrap(newPoisonGame(5),3),0,1);assert.equal(pickCupcake(g,0,2),g);assert.equal(pickCupcake(g,2,1),g);assert.equal(pickCupcake(g,9,2),g);assert.equal(pickCupcake(g,2,9),g);});
+test('Poison Picks human trap hit loses without bot reply',()=>{const g=placeTrap(newPoisonGame(5),3);const r=pickCupcake(g,5,3);assert.equal(r.phase,'lost');assert.deepEqual(r.botPicks,[]);assert.equal(pickCupcake(r,2,3),r);});
+test('Poison Picks bot trap hit wins and round is immutable after finish',()=>{const g=placeTrap(newPoisonGame(5),3);const r=pickCupcake(g,0,3);assert.equal(r.phase,'won');assert.equal(pickCupcake(r,1,2),r);});
+test('Poison Picks finishes within nine human turns',()=>{for(let a=0;a<9;a++)for(let b=0;b<9;b++){let g=placeTrap(newPoisonGame(a),b);for(let i=0;i<9&&g.phase==='playing';i++)g=pickCupcake(g,i,i);assert.ok(g.phase==='won'||g.phase==='lost');}});
+test('available cells exclude previous picks',()=>assert.deepEqual(availableCells([0,2,8]),[1,3,4,5,6,7]));

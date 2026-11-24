@@ -1,0 +1,12 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {createPreviewRoom,joinPreview,setReady,selectGame,leavePreview} from '../src/lib/banter/room.ts';
+import {reactionLine} from '../src/lib/banter/dialogue.ts';
+const host={nickname:'Host',mascot:'pip'};const buddy={nickname:'Buddy',mascot:'zuzu'};
+test('invalid profiles cannot create or join',()=>{assert.equal(createPreviewRoom({nickname:'<script>',mascot:'pip'}),null);const r=createPreviewRoom(host)!;assert.equal(joinPreview(r,{nickname:'<img>',mascot:'pip'}),r);});
+test('room has only two seats',()=>{const r=joinPreview(createPreviewRoom(host)!,buddy);assert.equal(joinPreview(r,host),r);});
+test('both seats must be ready',()=>{let r=createPreviewRoom(host)!;r=setReady(r,'host',true);assert.equal(r.phase,'waiting');r=joinPreview(r,buddy);r=setReady(r,'guest',true);assert.equal(r.phase,'ready');r=setReady(r,'host',false);assert.equal(r.phase,'waiting');});
+test('guest cannot select game and unknown games rejected',()=>{const r=createPreviewRoom(host)!;assert.equal(selectGame(r,'guest','brain-sync'),r);assert.equal(selectGame(r,'host','../admin'),r);});
+test('changing game clears readiness',()=>{let r=joinPreview(createPreviewRoom(host)!,buddy);r=setReady(setReady(r,'host',true),'guest',true);r=selectGame(r,'host','brain-sync');assert.equal(r.phase,'waiting');assert.equal(r.host.ready,false);assert.equal(r.guest?.ready,false);});
+test('leaving clears guest and readiness',()=>{const r=leavePreview(setReady(joinPreview(createPreviewRoom(host)!,buddy),'host',true));assert.equal(r.guest,null);assert.equal(r.host.ready,false);assert.equal(r.phase,'waiting');});
+test('mascot dialogue is character specific',()=>{assert.notEqual(reactionLine('pip','won'),reactionLine('mochi','won'));});

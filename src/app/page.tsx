@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
@@ -121,6 +122,7 @@ export default function Home() {
           <h1 id="hero-title">TWO PLAYERS.<br /><span className="hero-line"><span className="hero-accent">ZERO</span> CHILL<span className="hero-period">.</span></span></h1>
           <p className="hero-description">Ridiculously fun mini-games for you and your favorite person. Same couch or different time zones. <strong>Just send a link and let the chaos begin.</strong></p>
           <div className="hero-actions">
+            <Link href="/play" className="btn btn-outline">EXPLORE PLAYCLUB <ArrowUpRight size={18}/></Link>
             <button className="btn btn-dark" onClick={() => scrollTo("demo")}>TRY A GAME <Play size={16} fill="currentColor" /></button>
             <button className="btn btn-outline" onClick={() => scrollTo("early-access")}>JOIN THE WAITLIST <ArrowUpRight size={17} /></button>
           </div>
