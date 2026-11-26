@@ -1,5 +1,5 @@
 import {DurableObject} from 'cloudflare:workers';
-import {HEX,TOKEN,parseGuest,createRoom,addGuest,parseAction,act,view} from './engine.mjs';
+import {HEX,TOKEN,parseGuest,createRoom,addGuest,parseAction,act,view,GAMES,tick,nextAlarm} from './engine.mjs';
 const encoder=new TextEncoder();
 const randomHex=(n)=>Array.from(crypto.getRandomValues(new Uint8Array(n)),b=>b.toString(16).padStart(2,'0')).join('');
 const hash=async s=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',encoder.encode(s))),b=>b.toString(16).padStart(2,'0')).join('');
@@ -37,16 +37,17 @@ export class GameRoom extends DurableObject {
   serial(fn){const p=this.queue.then(fn);this.queue=p.catch(()=>{});return p;}
   connected(except){return [...new Set(this.ctx.getWebSockets().filter(w=>w!==except&&w.readyState===1).map(w=>w.deserializeAttachment()?.seat).filter(s=>s===0||s===1))];}
   async expire(code=4004,reason='Room expired'){await this.ctx.storage.deleteAll();await this.ctx.storage.deleteAlarm();for(const w of this.ctx.getWebSockets()){try{w.close(code,reason);}catch{}}}
-  async current(){const s=await this.ctx.storage.get('room');if(s&&s.expiresAt<=Date.now()){await this.expire();return null;}return s;}
+  async current(){const s=await this.ctx.storage.get('room');if(s&&s.expiresAt<=Date.now()){await this.expire();return null;}if(s&&tick(s,Date.now())){await this.persist(s);this.broadcast(s);}return s;}
+  async persist(s){await this.ctx.storage.put('room',s);await this.ctx.storage.setAlarm(nextAlarm(s));}
   send(w,payload){try{if(w.readyState===1)w.send(JSON.stringify(payload));}catch{}}
   broadcast(s,except){const online=this.connected(except);for(const w of this.ctx.getWebSockets()){if(w===except||w.readyState!==1)continue;const seat=w.deserializeAttachment()?.seat;if(seat===0||seat===1)this.send(w,{type:'STATE',state:view(s,seat,online)});}}
   fetch(req){return this.serial(async()=>{
     const u=new URL(req.url),id=u.searchParams.get('id');if(!id||!HEX.test(id)||!originAllowed(req,this.env))return error('Forbidden.',403);
     if(u.pathname==='/create'&&req.method==='POST'){
       if(await this.current())return error('Room exists.',409);
-      let g;try{g=parseGuest(await body(req));}catch{return error('Invalid request.');}if(!g)return error('Invalid player profile.');
-      const invite=randomHex(32),token=randomHex(32);const s=createRoom(id,await hash(invite),g,await hash(token),Date.now());
-      await this.ctx.storage.setAlarm(s.expiresAt);await this.ctx.storage.put('room',s);return json({roomId:id,invite,token,seat:0},201);
+      let g,game='number-rush';try{const x=await body(req);if(x&&typeof x==='object'&&Object.keys(x).sort().join(',')==='game,guest'){if(!GAMES.includes(x.game))return error('Invalid game.');game=x.game;g=parseGuest(x.guest);}else g=parseGuest(x);}catch{return error('Invalid request.');}if(!g)return error('Invalid player profile.');
+      const invite=randomHex(32),token=randomHex(32);const s=createRoom(id,await hash(invite),g,await hash(token),Date.now(),game);
+      await this.persist(s);return json({roomId:id,invite,token,seat:0},201);
     }
     const s=await this.current();if(!s)return error('Room unavailable or expired.',404);
     if(u.pathname==='/join'&&req.method==='POST'){
@@ -76,10 +77,10 @@ export class GameRoom extends DurableObject {
     const s=await this.current();if(!s){try{w.close(4004,'Room expired');}catch{}return;}
     if(action.type==='CLOSE_ROOM'){if(!s.players[a.seat])return;await this.expire(4005,'Room ended');return;}
     try{act(s,a.seat,action,this.connected(),action.type==='START'?secretNumber():undefined);}catch(e){this.send(w,{type:'ERROR',message:e.message});return;}
-    try{await this.ctx.storage.put('room',s);}catch{this.send(w,{type:'ERROR',message:'Could not save move. Please retry.'});return;}
+    try{await this.persist(s);}catch{this.send(w,{type:'ERROR',message:'Could not save move. Please retry.'});return;}
     this.broadcast(s);
   });}
   webSocketClose(w,code,reason){return this.serial(async()=>{try{w.close(code===1006?1000:code,reason);}catch{}const s=await this.current();if(s)this.broadcast(s,w);});}
   webSocketError(w){return this.serial(async()=>{try{w.close(1011,'Connection error');}catch{}const s=await this.current();if(s)this.broadcast(s,w);});}
-  alarm(){return this.serial(()=>this.expire());}
+  alarm(){return this.serial(async()=>{const s=await this.current();if(s)await this.ctx.storage.setAlarm(nextAlarm(s));});}
 }
