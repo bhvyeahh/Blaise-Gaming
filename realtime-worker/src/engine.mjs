@@ -1,9 +1,10 @@
 // Server-authoritative room rules. Never serialize private state.
 import {makeBrain,advanceBrain,answerBrain,brainView,brainDeadline} from "./brain.mjs";
+import {makePoison,lockTrap,pickPoison,poisonView,isCell} from "./poison.mjs";
 export const ROOM_TTL = 2 * 60 * 60 * 1000;
 export const HEX = /^[a-f0-9]{32}$/;
 export const TOKEN = /^[a-f0-9]{64}$/;
-export const GAMES = ['number-rush','brain-sync'];
+export const GAMES = ['number-rush','brain-sync','poison-picks'];
 export function parseGuest(x) {
   if (!x || typeof x !== 'object' || Array.isArray(x) || Object.keys(x).length !== 2 || typeof x.nickname !== 'string' || x.nickname.length > 80 || !['pip','mochi','bloop','zuzu'].includes(x.mascot)) return null;
   const nickname = x.nickname.normalize('NFC').trim().replace(/ +/g,' ');
@@ -24,6 +25,8 @@ export function parseAction(x) {
   if((x.type==='START'||x.type==='CLOSE_ROOM') && keys==='type') return x;
   if(x.type==='SELECT_GAME' && keys==='game,type' && GAMES.includes(x.game)) return x;
   if(x.type==='BRAIN_ANSWER' && keys==='choice,index,round,type' && Number.isSafeInteger(x.round) && Number.isInteger(x.index) && x.index>=0 && x.index<5 && Number.isInteger(x.choice) && x.choice>=0 && x.choice<4) return x;
+  if(x.type==='POISON_TRAP' && keys==='cell,round,type' && Number.isSafeInteger(x.round) && isCell(x.cell)) return x;
+  if(x.type==='POISON_PICK' && keys==='cell,move,round,type' && Number.isSafeInteger(x.round) && Number.isInteger(x.move) && x.move>=0 && x.move<17 && isCell(x.cell)) return x;
   if(x.type==='GUESS' && keys==='round,type,value' && Number.isSafeInteger(x.round) && Number.isInteger(x.value) && x.value>=1 && x.value<=100) return x;
   if(x.type==='REMATCH' && keys==='round,type' && Number.isSafeInteger(x.round)) return x;
   return null;
@@ -39,11 +42,15 @@ export function act(s, seat, a, connected, secret, now=Date.now()) {
   } else if(a.type==='START') {
     if(seat!==0 || s.phase!=='lobby' || !s.players.every(p=>p?.ready) || ![0,1].every(i=>connected.includes(i))) throw Error('Both players must be online and ready; only the host can start.');
     if(s.game==='number-rush'&&(!Number.isInteger(secret)||secret<1||secret>100)) throw Error('Invalid server secret.');
-    const match=s.game==='brain-sync'?makeBrain(now):{secret,guesses:[[],[]],winner:null,rematch:[false,false]};
+    const match=s.game==='brain-sync'?makeBrain(now):s.game==='poison-picks'?makePoison(s.round+1):{secret,guesses:[[],[]],winner:null,rematch:[false,false]};
     s.round++; s.phase='playing'; s.match=match;
   } else if(a.type==='BRAIN_ANSWER') {
     if(s.game!=='brain-sync'||s.phase!=='playing'||a.round!==s.round||!connected.includes(1-seat)) throw Error('Round unavailable or partner offline.');
     answerBrain(s.match,seat,a,now);
+  } else if(a.type==='POISON_TRAP'||a.type==='POISON_PICK') {
+    if(s.game!=='poison-picks'||s.phase!=='playing'||a.round!==s.round||!connected.includes(1-seat)) throw Error('Round unavailable or partner offline.');
+    if(a.type==='POISON_TRAP')lockTrap(s.match,seat,a.cell);else pickPoison(s.match,seat,a.cell,a.move);
+    if(s.match.stage==='finished')s.phase='finished';
   } else if(a.type==='GUESS') {
     if(s.game!=='number-rush'||s.phase!=='playing'||a.round!==s.round||![0,1].every(i=>connected.includes(i))) throw Error('Round unavailable or partner offline.');
     const list=s.match.guesses[seat];
@@ -63,7 +70,7 @@ export function view(s, seat, connected) {
   const m=s.match;
   return {id:s.id,phase:s.phase,game:s.game,round:s.round,revision:s.revision,expiresAt:s.expiresAt,you:seat,
     players:s.players.map((p,i)=>p?{nickname:p.nickname,mascot:p.mascot,ready:p.ready,online:connected.includes(i)}:null),
-    match:m?(s.game==='brain-sync'?brainView(m,seat):{guesses:m.guesses[seat].map(g=>({...g})),opponentCount:m.guesses[1-seat].length,winner:s.phase==='finished'?m.winner:null,secret:s.phase==='finished'?m.secret:null,rematch:[...m.rematch]}):null};
+    match:m?(s.game==='brain-sync'?brainView(m,seat):s.game==='poison-picks'?poisonView(m,seat):{guesses:m.guesses[seat].map(g=>({...g})),opponentCount:m.guesses[1-seat].length,winner:s.phase==='finished'?m.winner:null,secret:s.phase==='finished'?m.secret:null,rematch:[...m.rematch]}):null};
 }
 
 // The Durable Object calls this on alarms and before processing messages.

@@ -41,3 +41,21 @@ test('Brain Sync: authenticated two-seat match, private answers, alarms, reconne
  await send(a,{type:'REMATCH',round:1});await send(b,{type:'REMATCH',round:1});assert.equal(state(a).phase,'lobby');assert.equal(state(b).match,null);
  await send(a,{type:'SELECT_GAME',game:'number-rush'});assert.equal(state(b).game,'number-rush');
 });
+
+test('Poison Picks: authenticated two-seat match, hidden traps, turn rejection, reconnect, rematch and game switching',async()=>{
+ const h=harness(),host=await (await h.request('/rooms',{body:{guest,game:'poison-picks'}})).json(),path=`/rooms/${host.roomId}`;
+ const player=await (await h.request(`${path}/join`,{body:{guest:other,invite:host.invite}})).json();
+ const connect=token=>h.request(`${path}/socket`,{method:'GET',protocol:`banterbox.v1, ${token}`});
+ assert.equal((await connect(host.token)).status,101);assert.equal((await connect(player.token)).status,101);
+ const {object,sockets}=h.objects.get(host.roomId);let [a,b]=sockets;
+ const send=(w,action)=>object.webSocketMessage(w,JSON.stringify(action)),state=w=>w.messages.filter(m=>m.type==='STATE').at(-1).state;
+ for(const w of [a,b])await send(w,{type:'READY',ready:true});await send(a,{type:'START'});
+ await send(a,{type:'POISON_TRAP',round:1,cell:8});assert.equal(state(b).match.opponentTrap,null);assert.equal(state(b).match.ownTrap,null);assert.deepEqual(state(b).match.locked,[true,false]);
+ await send(b,{type:'POISON_TRAP',round:1,cell:7});assert.equal(state(a).match.opponentTrap,null);assert.equal(state(b).match.opponentTrap,null);
+ await send(b,{type:'POISON_PICK',round:1,move:0,cell:8});assert.equal(b.messages.at(-1).type,'ERROR');
+ await send(a,{type:'POISON_PICK',round:1,move:0,cell:2});assert.equal(state(b).match.turn,1);
+ await object.webSocketClose(b,1000,'disconnect');assert.equal(state(a).players[1].online,false);
+ assert.equal((await connect(player.token)).status,101);b=sockets.at(-1);assert.equal(state(b).match.ownTrap,7);assert.equal(state(b).match.opponentTrap,null);assert.equal(state(b).match.turn,1);assert.deepEqual(state(b).match.picks,[[2],[]]);
+ await send(b,{type:'POISON_PICK',round:1,move:1,cell:8});assert.equal(state(a).phase,'finished');assert.equal(state(a).match.winner,0);assert.equal(state(b).match.winner,0);assert.equal(state(b).match.opponentTrap,8);
+ for(const w of [a,b])await send(w,{type:'REMATCH',round:1});assert.equal(state(a).phase,'lobby');assert.equal(state(b).match,null);await send(a,{type:'SELECT_GAME',game:'brain-sync'});assert.equal(state(b).game,'brain-sync');
+});
