@@ -1,4 +1,5 @@
 'use client';
+import {Volume2,VolumeX,Music,Music2,Download,Share2} from 'lucide-react';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {REACTIONS,type ReactionId,type OnlineState,type Seat} from '@/lib/banter/online';
 import {gameCue,resultCard,type Cue,type ResultCard} from '@/lib/banter/celebration';
@@ -14,16 +15,16 @@ export function useRoomAudio(state:OnlineState|null){
  useEffect(()=>()=>{const c=context.current;context.current=null;if(c)void c.close().catch(()=>{});},[]);
  return {sound,music,toggle,play};
 }
-export function AudioControls({audio}:{audio:ReturnType<typeof useRoomAudio>}){return <div className="bp-audio-controls"><button type="button" aria-pressed={audio.sound} onClick={()=>void audio.toggle('sound')}>Sound {audio.sound?'on':'off'}</button><button type="button" aria-pressed={audio.music} onClick={()=>void audio.toggle('music')}>Music {audio.music?'on':'off'}</button></div>;}
+export function AudioControls({audio}:{audio:ReturnType<typeof useRoomAudio>}){return <div className="bp-audio-controls"><button type="button" aria-pressed={audio.sound} onClick={()=>void audio.toggle('sound')}>{audio.sound?<Volume2 size={17}/>:<VolumeX size={17}/>} Sound {audio.sound?'on':'off'}</button><button type="button" aria-pressed={audio.music} onClick={()=>void audio.toggle('music')}>{audio.music?<Music2 size={17}/>:<Music size={17}/>} Music {audio.music?'on':'off'}</button></div>;}
 export type ReactionEvent={seat:Seat;reaction:ReactionId};
 export function RoomExtras({state,online,both,reaction,onReact}:{state:OnlineState;online:boolean;both:boolean;reaction:ReactionEvent|null;onReact:(r:ReactionId)=>boolean}){
  const [cooldown,setCooldown]=useState(false);const timer=useRef<ReturnType<typeof setTimeout>|null>(null);
  useEffect(()=>()=>{if(timer.current)clearTimeout(timer.current);},[]);
  const s=state.stats;
- return <div className="bp-extras bp-panel"><div className="bp-extra-head"><span className="bp-kicker">ROOM VIBES / LIVE</span></div>
+ return <div className="bp-extras bp-panel"><div className="bp-extra-head"><span className="bp-kicker">ROOM VIBES</span></div>
  {s&&<div className="bp-score-strip" aria-label="Session scoreboard"><div><span>YOUR WINS</span><strong>{s.wins[state.you]}</strong></div><div><span>PARTNER WINS</span><strong>{s.wins[1-state.you]}</strong></div><div><span>DRAWS</span><strong>{s.draws}</strong></div><div><span>GAMES</span><strong>{s.matches}</strong></div></div>}
  {s&&s.brainMatches>0&&<p className="bp-small">Brain Sync together: {s.brainPoints}/{s.brainTotal} answers matched across {s.brainMatches} game{s.brainMatches===1?'':'s'}.</p>}
- <div className="bp-reaction-row" aria-label="Send a live reaction">{(Object.keys(REACTIONS) as ReactionId[]).map(id=><button key={id} type="button" aria-label={REACTIONS[id].label} title={REACTIONS[id].label} disabled={!online||!both||cooldown} onClick={()=>{if(onReact(id)){setCooldown(true);timer.current=setTimeout(()=>setCooldown(false),1400);}}}>{REACTIONS[id].emoji}</button>)}</div>
+ <span className="bp-reaction-label">Send a reaction</span><div className="bp-reaction-row" aria-label="Send a live reaction">{(Object.keys(REACTIONS) as ReactionId[]).map(id=><button key={id} type="button" aria-label={REACTIONS[id].label} title={REACTIONS[id].label} disabled={!online||!both||cooldown} onClick={()=>{if(onReact(id)){setCooldown(true);timer.current=setTimeout(()=>setCooldown(false),1400);}}}>{REACTIONS[id].emoji}</button>)}</div>
  <div className="bp-reaction-message" role="status" aria-live="polite">{reaction?<span key={`${reaction.seat}:${reaction.reaction}`}>{reaction.seat===state.you?'You':state.players[reaction.seat]?.nickname??'Partner'}: {REACTIONS[reaction.reaction].emoji} {REACTIONS[reaction.reaction].label}</span>:<span>Send a little reaction to your human.</span>}</div>
  </div>;
 }
@@ -32,5 +33,5 @@ export function ShareResult({state}:{state:OnlineState}){const card=resultCard(s
  const text=`${card.game}: ${card.title} ${card.detail} Play BanterBox!`;
  async function download(){if(!card)return;setBusy(true);try{const blob=await renderCard(card);const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='banterbox-result.png';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);setStatus('Result image ready.');}catch{setStatus('Could not export the image. Try sharing the result text.');}finally{setBusy(false);}}
  async function share(){const url=`${window.location.origin}/play`;try{if(navigator.share){await navigator.share({title:'BanterBox',text,url});setStatus('Result shared.');}else{await navigator.clipboard.writeText(`${text}\n${url}`);setStatus('Result copied!');}}catch(e){if(!(e instanceof DOMException&&e.name==='AbortError'))setStatus('Sharing unavailable. Copy the text below.');}}
- return <div className="bp-panel bp-share-result"><span className="bp-kicker">BRAGGING RIGHTS</span><h3>Share the chaos.</h3><div className="bp-share-actions"><button type="button" className="bp-secondary-action" disabled={busy} onClick={()=>void download()}>{busy?'EXPORTING…':'SAVE RESULT CARD ↓'}</button><button type="button" className="bp-secondary-action" onClick={()=>void share()}>SHARE / COPY RESULT ↗</button></div><p className="bp-small" role="status">{status||'No private room code or player names included.'}</p><details><summary>Result text</summary><p>{text}</p></details></div>;
+ return <div className="bp-panel bp-share-result"><span className="bp-kicker">BRAGGING RIGHTS</span><h3>Share the chaos.</h3><div className="bp-share-actions"><button type="button" className="bp-secondary-action" disabled={busy} onClick={()=>void download()}><Download size={18}/>{busy?'Exporting…':'Save result card'}</button><button type="button" className="bp-secondary-action" onClick={()=>void share()}><Share2 size={18}/> Share / copy result</button></div><p className="bp-small" role="status">{status||'No private room code or player names included.'}</p><details><summary>Result text</summary><p>{text}</p></details></div>;
 }
