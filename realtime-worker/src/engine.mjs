@@ -4,6 +4,14 @@ import {makePoison,lockTrap,pickPoison,poisonView,isCell} from "./poison.mjs";
 export const ROOM_TTL = 2 * 60 * 60 * 1000;
 export const HEX = /^[a-f0-9]{32}$/;
 export const TOKEN = /^[a-f0-9]{64}$/;
+export const REACTIONS = ['heart','laugh','fire','wow','gg','oops'];
+export const emptyStats=()=>({matches:0,wins:[0,0],draws:0,brainMatches:0,brainPoints:0,brainTotal:0});
+function recordFinished(s){
+ const stats=s.stats??(s.stats=emptyStats());
+ stats.matches++;
+ if(s.game==='brain-sync'){stats.brainMatches++;stats.brainPoints+=s.match.score;stats.brainTotal+=s.match.history.length;}
+ else if(s.match.winner===null)stats.draws++;else stats.wins[s.match.winner]++;
+}
 export const GAMES = ['number-rush','brain-sync','poison-picks'];
 export function parseGuest(x) {
   if (!x || typeof x !== 'object' || Array.isArray(x) || Object.keys(x).length !== 2 || typeof x.nickname !== 'string' || x.nickname.length > 80 || !['pip','mochi','bloop','zuzu'].includes(x.mascot)) return null;
@@ -12,7 +20,7 @@ export function parseGuest(x) {
   return {nickname, mascot:x.mascot};
 }
 export function createRoom(id, inviteHash, guest, tokenHash, now, game='number-rush') {
-  return {id,inviteHash,expiresAt:now+ROOM_TTL,phase:'lobby',game,round:0,revision:0,players:[{...guest,tokenHash,ready:false},null],match:null};
+  return {id,inviteHash,expiresAt:now+ROOM_TTL,phase:'lobby',game,round:0,revision:0,players:[{...guest,tokenHash,ready:false},null],match:null,stats:emptyStats()};
 }
 export function addGuest(s, guest, tokenHash) {
   if (s.phase !== 'lobby' || s.players[1]) throw Error('Room is full or unavailable.');
@@ -21,6 +29,7 @@ export function addGuest(s, guest, tokenHash) {
 export function parseAction(x) {
   if(!x || typeof x!=='object' || Array.isArray(x)) return null;
   const keys=Object.keys(x).sort().join(',');
+  if(x.type==='REACT' && keys==='reaction,type' && REACTIONS.includes(x.reaction)) return x;
   if(x.type==='READY' && keys==='ready,type' && typeof x.ready==='boolean') return x;
   if((x.type==='START'||x.type==='CLOSE_ROOM') && keys==='type') return x;
   if(x.type==='SELECT_GAME' && keys==='game,type' && GAMES.includes(x.game)) return x;
@@ -33,6 +42,7 @@ export function parseAction(x) {
 }
 export function act(s, seat, a, connected, secret, now=Date.now()) {
   if(!s.players[seat] || !connected.includes(seat)) throw Error('Not a connected player.');
+  const previousPhase=s.phase;
   if(a.type==='SELECT_GAME') {
     if(seat!==0||s.phase!=='lobby'||!GAMES.includes(a.game)) throw Error('Only the host can select a game in the lobby.');
     if(s.game!==a.game){s.game=a.game;s.players.forEach(p=>{if(p)p.ready=false;});}
@@ -64,11 +74,13 @@ export function act(s, seat, a, connected, secret, now=Date.now()) {
     s.match.rematch[seat]=true;
     if(s.match.rematch.every(Boolean)){s.phase='lobby';s.match=null;s.players.forEach(p=>{if(p)p.ready=false;});}
   } else throw Error('Unsupported action.');
+  if(previousPhase!=='finished'&&s.phase==='finished')recordFinished(s);
   s.revision++;
 }
 export function view(s, seat, connected) {
   const m=s.match;
   return {id:s.id,phase:s.phase,game:s.game,round:s.round,revision:s.revision,expiresAt:s.expiresAt,you:seat,
+    stats:structuredClone(s.stats??emptyStats()),
     players:s.players.map((p,i)=>p?{nickname:p.nickname,mascot:p.mascot,ready:p.ready,online:connected.includes(i)}:null),
     match:m?(s.game==='brain-sync'?brainView(m,seat):s.game==='poison-picks'?poisonView(m,seat):{guesses:m.guesses[seat].map(g=>({...g})),opponentCount:m.guesses[1-seat].length,winner:s.phase==='finished'?m.winner:null,secret:s.phase==='finished'?m.secret:null,rematch:[...m.rematch]}):null};
 }
@@ -77,7 +89,7 @@ export function view(s, seat, connected) {
 export function tick(s,now){
  if(s.game!=='brain-sync'||s.phase!=='playing')return false;
  if(!advanceBrain(s.match,now))return false;
- if(s.match.stage==='finished')s.phase='finished';
+ if(s.match.stage==='finished'){s.phase='finished';recordFinished(s);}
  s.revision++;return true;
 }
 export function nextAlarm(s){return Math.min(s.expiresAt,s.game==='brain-sync'&&s.phase==='playing'?brainDeadline(s.match):Infinity);}

@@ -7,9 +7,13 @@ export const ONLINE_NAMES:Record<OnlineGame,string>={'number-rush':'# Number Rus
 export type PoisonMatch={stage:'setup'|'playing'|'finished';ownTrap:number|null;opponentTrap:number|null;locked:[boolean,boolean];picks:[number[],number[]];turn:Seat|null;move:number;winner:Seat|null;last:{seat:Seat;cell:number;hit:boolean}|null;rematch:[boolean,boolean]};
 export type NumberMatch={guesses:{value:number;hint:'higher'|'lower'|'correct'}[];opponentCount:number;winner:Seat|null;secret:number|null;rematch:[boolean,boolean]};
 export type BrainMatch={stage:'countdown'|'choosing'|'reveal'|'finished';index:number;total:number;deadline:number|null;serverNow:number;score:number;prompt:{question:string;options:string[]}|null;locked:[boolean,boolean];ownChoice:number|null;revealed:[number|null,number|null]|null;history:{matched:boolean}[];rematch:[boolean,boolean]};
-type RoomBase={id:string;phase:'lobby'|'playing'|'finished';round:number;revision:number;expiresAt:number;you:Seat;players:[(Guest&{ready:boolean;online:boolean})|null,(Guest&{ready:boolean;online:boolean})|null]};
+export const REACTIONS={heart:{emoji:'💛',label:'Love'},laugh:{emoji:'😂',label:'Laugh'},fire:{emoji:'🔥',label:'Fire'},wow:{emoji:'😮',label:'Wow'},gg:{emoji:'🙌',label:'Good game'},oops:{emoji:'🫠',label:'Oops'}} as const;
+export type ReactionId=keyof typeof REACTIONS;
+export function isReactionId(x:unknown):x is ReactionId{return typeof x==='string'&&Object.hasOwn(REACTIONS,x);}
+export type RoomStats={matches:number;wins:[number,number];draws:number;brainMatches:number;brainPoints:number;brainTotal:number};
+type RoomBase={id:string;phase:'lobby'|'playing'|'finished';round:number;revision:number;expiresAt:number;you:Seat;stats?:RoomStats;players:[(Guest&{ready:boolean;online:boolean})|null,(Guest&{ready:boolean;online:boolean})|null]};
 export type OnlineState=RoomBase&({game:'number-rush';match:NumberMatch|null}|{game:'brain-sync';match:BrainMatch|null}|{game:'poison-picks';match:PoisonMatch|null});
-export type OnlineAction={type:'READY';ready:boolean}|{type:'START'}|{type:'CLOSE_ROOM'}|{type:'GUESS';round:number;value:number}|{type:'REMATCH';round:number}|{type:'SELECT_GAME';game:OnlineGame}|{type:'BRAIN_ANSWER';round:number;index:number;choice:number}|{type:'POISON_TRAP';round:number;cell:number}|{type:'POISON_PICK';round:number;move:number;cell:number};
+export type OnlineAction={type:'REACT';reaction:ReactionId}|{type:'READY';ready:boolean}|{type:'START'}|{type:'CLOSE_ROOM'}|{type:'GUESS';round:number;value:number}|{type:'REMATCH';round:number}|{type:'SELECT_GAME';game:OnlineGame}|{type:'BRAIN_ANSWER';round:number;index:number;choice:number}|{type:'POISON_TRAP';round:number;cell:number}|{type:'POISON_PICK';round:number;move:number;cell:number};
 const KEY='banterbox.online.v1';
 const idPattern=/^[a-f0-9]{32}$/;const tokenPattern=/^[a-f0-9]{64}$/;
 export function parseInvitation(value:string){const m=/^#?([a-f0-9]{32})\.([a-f0-9]{64})$/.exec(value.trim());return m?{roomId:m[1],invite:m[2]}:null;}

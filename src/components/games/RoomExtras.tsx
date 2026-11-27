@@ -1,0 +1,36 @@
+'use client';
+import {useCallback,useEffect,useRef,useState} from 'react';
+import {REACTIONS,type ReactionId,type OnlineState,type Seat} from '@/lib/banter/online';
+import {gameCue,resultCard,type Cue,type ResultCard} from '@/lib/banter/celebration';
+const tones:Record<Cue,number[]>={tap:[520],start:[392,523,659],match:[523,659,784],miss:[330,262],win:[523,659,784,1047],loss:[392,330,262],draw:[440,523],reaction:[660,880],join:[392,587]};
+const musicNotes=[262,330,392,330,294,349,440,349,262,330,392,523,294,349,392,330];
+function tone(ctx:AudioContext,hz:number,at:number,volume:number,length=.15){const oscillator=ctx.createOscillator(),gain=ctx.createGain();oscillator.type='sine';oscillator.frequency.value=hz;gain.gain.setValueAtTime(.001,at);gain.gain.exponentialRampToValueAtTime(volume,at+.015);gain.gain.exponentialRampToValueAtTime(.001,at+length);oscillator.connect(gain);gain.connect(ctx.destination);oscillator.onended=()=>{oscillator.disconnect();gain.disconnect();};oscillator.start(at);oscillator.stop(at+length+.02);}
+export function useRoomAudio(state:OnlineState|null){
+ const [sound,setSound]=useState(false),[music,setMusic]=useState(false);const context=useRef<AudioContext|null>(null),previous=useRef<OnlineState|null>(null);const prefs=useRef({sound:false,music:false});
+ const play=useCallback((cue:Cue)=>{const c=context.current;if(!prefs.current.sound||!c||c.state!=='running')return;try{tones[cue].forEach((hz,i)=>tone(c,hz,c.currentTime+i*.105,.075));}catch{}},[]);
+ const toggle=async(which:'sound'|'music')=>{const next=!prefs.current[which];if(next){try{const c=context.current??(context.current=new AudioContext());await c.resume();if(c.state!=='running')return;}catch{return;}}prefs.current[which]=next;if(which==='sound')setSound(next);else setMusic(next);if(next&&which==='sound')play('tap');};
+ useEffect(()=>{const cue=gameCue(previous.current,state);previous.current=state;if(cue)play(cue);},[state,play]);
+ useEffect(()=>{if(!music)return;let i=0;const id=setInterval(()=>{const c=context.current;if(c?.state==='running'&&!document.hidden){try{tone(c,musicNotes[i++%musicNotes.length],c.currentTime,.025,.36);}catch{}}},430);return()=>clearInterval(id);},[music]);
+ useEffect(()=>()=>{const c=context.current;context.current=null;if(c)void c.close().catch(()=>{});},[]);
+ return {sound,music,toggle,play};
+}
+export function AudioControls({audio}:{audio:ReturnType<typeof useRoomAudio>}){return <div className="bp-audio-controls"><button type="button" aria-pressed={audio.sound} onClick={()=>void audio.toggle('sound')}>Sound {audio.sound?'on':'off'}</button><button type="button" aria-pressed={audio.music} onClick={()=>void audio.toggle('music')}>Music {audio.music?'on':'off'}</button></div>;}
+export type ReactionEvent={seat:Seat;reaction:ReactionId};
+export function RoomExtras({state,online,both,reaction,onReact}:{state:OnlineState;online:boolean;both:boolean;reaction:ReactionEvent|null;onReact:(r:ReactionId)=>boolean}){
+ const [cooldown,setCooldown]=useState(false);const timer=useRef<ReturnType<typeof setTimeout>|null>(null);
+ useEffect(()=>()=>{if(timer.current)clearTimeout(timer.current);},[]);
+ const s=state.stats;
+ return <div className="bp-extras bp-panel"><div className="bp-extra-head"><span className="bp-kicker">ROOM VIBES / LIVE</span></div>
+ {s&&<div className="bp-score-strip" aria-label="Session scoreboard"><div><span>YOUR WINS</span><strong>{s.wins[state.you]}</strong></div><div><span>PARTNER WINS</span><strong>{s.wins[1-state.you]}</strong></div><div><span>DRAWS</span><strong>{s.draws}</strong></div><div><span>GAMES</span><strong>{s.matches}</strong></div></div>}
+ {s&&s.brainMatches>0&&<p className="bp-small">Brain Sync together: {s.brainPoints}/{s.brainTotal} answers matched across {s.brainMatches} game{s.brainMatches===1?'':'s'}.</p>}
+ <div className="bp-reaction-row" aria-label="Send a live reaction">{(Object.keys(REACTIONS) as ReactionId[]).map(id=><button key={id} type="button" aria-label={REACTIONS[id].label} title={REACTIONS[id].label} disabled={!online||!both||cooldown} onClick={()=>{if(onReact(id)){setCooldown(true);timer.current=setTimeout(()=>setCooldown(false),1400);}}}>{REACTIONS[id].emoji}</button>)}</div>
+ <div className="bp-reaction-message" role="status" aria-live="polite">{reaction?<span key={`${reaction.seat}:${reaction.reaction}`}>{reaction.seat===state.you?'You':state.players[reaction.seat]?.nickname??'Partner'}: {REACTIONS[reaction.reaction].emoji} {REACTIONS[reaction.reaction].label}</span>:<span>Send a little reaction to your human.</span>}</div>
+ </div>;
+}
+function renderCard(card:ResultCard){const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1080;const c=canvas.getContext('2d');if(!c)throw Error('Image export unavailable.');c.fillStyle='#fff9ed';c.fillRect(0,0,1080,1080);c.fillStyle=card.accent;c.fillRect(55,55,970,970);c.strokeStyle='#29231f';c.lineWidth=6;c.strokeRect(55,55,970,970);c.fillStyle='#29231f';c.textAlign='center';c.font='bold 40px sans-serif';c.fillText('BANTERBOX / PLAYCLUB',540,155);c.font='bold 120px sans-serif';c.fillText('✳',540,365);c.font='bold 42px sans-serif';c.fillText(card.game.toUpperCase(),540,460);c.font='bold 76px sans-serif';c.fillText(card.title,540,600,900);c.font='36px sans-serif';c.fillText(card.detail,540,688,850);c.font='bold 32px sans-serif';c.fillText('GOOD GAMES. BETTER COMPANY.',540,940,900);return new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(Error('Image export failed.')),'image/png'));}
+export function ShareResult({state}:{state:OnlineState}){const card=resultCard(state);const [status,setStatus]=useState(''),[busy,setBusy]=useState(false);if(!card)return null;
+ const text=`${card.game}: ${card.title} ${card.detail} Play BanterBox!`;
+ async function download(){if(!card)return;setBusy(true);try{const blob=await renderCard(card);const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='banterbox-result.png';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);setStatus('Result image ready.');}catch{setStatus('Could not export the image. Try sharing the result text.');}finally{setBusy(false);}}
+ async function share(){const url=`${window.location.origin}/play`;try{if(navigator.share){await navigator.share({title:'BanterBox',text,url});setStatus('Result shared.');}else{await navigator.clipboard.writeText(`${text}\n${url}`);setStatus('Result copied!');}}catch(e){if(!(e instanceof DOMException&&e.name==='AbortError'))setStatus('Sharing unavailable. Copy the text below.');}}
+ return <div className="bp-panel bp-share-result"><span className="bp-kicker">BRAGGING RIGHTS</span><h3>Share the chaos.</h3><div className="bp-share-actions"><button type="button" className="bp-secondary-action" disabled={busy} onClick={()=>void download()}>{busy?'EXPORTING…':'SAVE RESULT CARD ↓'}</button><button type="button" className="bp-secondary-action" onClick={()=>void share()}>SHARE / COPY RESULT ↗</button></div><p className="bp-small" role="status">{status||'No private room code or player names included.'}</p><details><summary>Result text</summary><p>{text}</p></details></div>;
+}

@@ -75,6 +75,13 @@ export class GameRoom extends DurableObject {
     if(typeof message!=='string'||encoder.encode(message).length>1024){w.close(1009,'Invalid message size');return;}
     let action;try{action=parseAction(JSON.parse(message));}catch{}if(!action){this.send(w,{type:'ERROR',message:'Invalid action.'});return;}
     const s=await this.current();if(!s){try{w.close(4004,'Room expired');}catch{}return;}
+    if(action.type==='REACT'){
+      if(!s.players[a.seat]||!this.connected().includes(1-a.seat))return;
+      if(a.lastReactionAt!==undefined&&now-a.lastReactionAt<1200){this.send(w,{type:'ERROR',message:'Give your reaction a moment.'});return;}
+      a.lastReactionAt=now;w.serializeAttachment(a);
+      for(const peer of this.ctx.getWebSockets())this.send(peer,{type:'REACTION',seat:a.seat,reaction:action.reaction});
+      return;
+    }
     if(action.type==='CLOSE_ROOM'){if(!s.players[a.seat])return;await this.expire(4005,'Room ended');return;}
     try{act(s,a.seat,action,this.connected(),action.type==='START'?secretNumber():undefined);}catch(e){this.send(w,{type:'ERROR',message:e.message});return;}
     try{await this.persist(s);}catch{this.send(w,{type:'ERROR',message:'Could not save move. Please retry.'});return;}
